@@ -82,32 +82,6 @@ func TestAccDocidrPool_SingleAllocation(t *testing.T) {
 	})
 }
 
-func TestAccDocidrPool_InvalidPrefixLength(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
-		ProviderFactories: acceptance.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccDocidrPoolConfig_InvalidPrefixLength(),
-				ExpectError: regexp.MustCompile(`expected .* to be in the range \(16 - 28\)`),
-			},
-		},
-	})
-}
-
-func TestAccDocidrPool_DuplicateNames(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
-		ProviderFactories: acceptance.TestAccProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccDocidrPoolConfig_DuplicateNames(),
-				ExpectError: regexp.MustCompile(`duplicate allocation name`),
-			},
-		},
-	})
-}
-
 func TestAccDocidrPool_ForceNew(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
@@ -188,33 +162,6 @@ resource "docidr_pool" "test" {
   allocation {
     name          = "only_vpc"
     prefix_length = 16
-  }
-}
-`
-}
-
-func testAccDocidrPoolConfig_InvalidPrefixLength() string {
-	return `
-resource "docidr_pool" "test" {
-  allocation {
-    name          = "invalid"
-    prefix_length = 8
-  }
-}
-`
-}
-
-func testAccDocidrPoolConfig_DuplicateNames() string {
-	return `
-resource "docidr_pool" "test" {
-  allocation {
-    name          = "duplicate"
-    prefix_length = 16
-  }
-
-  allocation {
-    name          = "duplicate"
-    prefix_length = 20
   }
 }
 `

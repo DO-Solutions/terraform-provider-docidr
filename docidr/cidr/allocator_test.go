@@ -22,7 +22,12 @@ func TestNewAllocator(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "invalid CIDR",
+			name:     "invalid /16 CIDR",
+			baseCIDR: "172.300.0.0/16",
+			wantErr:  true,
+		},
+		{
+			name:     "Not a CIDR",
 			baseCIDR: "not-a-cidr",
 			wantErr:  true,
 		},
