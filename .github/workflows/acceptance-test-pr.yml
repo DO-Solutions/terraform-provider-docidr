@@ -1,0 +1,77 @@
+name: Acceptance Tests
+
+on:
+  repository_dispatch:
+    types: [testacc-command]
+
+jobs:
+  acceptance:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    concurrency:
+      group: acceptance-${{ github.event.client_payload.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - name: Set pending status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: '${{ github.event.client_payload.pull_request.head.sha }}',
+              state: 'pending',
+              context: 'Acceptance Tests',
+              description: 'Running acceptance tests...'
+            })
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.client_payload.pull_request.head.sha }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Run acceptance tests
+        id: testacc
+        env:
+          TF_ACC: "1"
+          DIGITALOCEAN_TOKEN: ${{ secrets.ACCEPTANCE_TESTS_TOKEN }}
+        run: make testacc
+
+      - name: Run sweep
+        if: always()
+        env:
+          DIGITALOCEAN_TOKEN: ${{ secrets.ACCEPTANCE_TESTS_TOKEN }}
+        run: make sweep
+
+      - name: Update status on success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: '${{ github.event.client_payload.pull_request.head.sha }}',
+              state: 'success',
+              context: 'Acceptance Tests',
+              description: 'Acceptance tests passed'
+            })
+
+      - name: Update status on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: '${{ github.event.client_payload.pull_request.head.sha }}',
+              state: 'failure',
+              context: 'Acceptance Tests',
+              description: 'Acceptance tests failed'
+            })
