@@ -9,7 +9,7 @@ terraform {
   }
 }
 
-# Both providers use DIGITALOCEAN_TOKEN environment variable
+# Both providers use DIGITALOCEAN_ACCESS_TOKEN environment variable
 provider "docidr" {}
 
 provider "digitalocean" {}
@@ -41,11 +41,14 @@ resource "digitalocean_vpc" "main" {
   ip_range = docidr_pool.network.allocations.main_vpc
 }
 
+# This data source retrieves a list of all available Kubernetes versions on DigitalOcean, so we can use the latest version for our cluster.
+data "digitalocean_kubernetes_versions" "all" {}
+
 # Create Kubernetes cluster using the allocated CIDRs
 resource "digitalocean_kubernetes_cluster" "app" {
   name           = "example-cluster"
   region         = "nyc1"
-  version        = "1.28.2-do.0"
+  version        = data.digitalocean_kubernetes_versions.all.latest_version
   vpc_uuid       = digitalocean_vpc.main.id
   cluster_subnet = docidr_pool.network.allocations.doks_cluster
   service_subnet = docidr_pool.network.allocations.doks_services
