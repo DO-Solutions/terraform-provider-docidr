@@ -18,6 +18,11 @@ The `docidr` provider queries existing network allocations within your DigitalOc
 curl -sSL https://raw.githubusercontent.com/DO-Solutions/terraform-provider-docidr/main/scripts/install.sh | bash
 ```
 
+The script will:
+1. Download the appropriate binary for your platform
+2. Install it to `~/.terraform.d/plugins/DO-Solutions/docidr/`
+3. Configure `~/.terraformrc` with the necessary `dev_overrides`
+
 ### Option 2: Manual Installation
 
 1. Download the appropriate release from [GitHub Releases](https://github.com/DO-Solutions/terraform-provider-docidr/releases)
@@ -25,23 +30,31 @@ curl -sSL https://raw.githubusercontent.com/DO-Solutions/terraform-provider-doci
 
 ```bash
 # Example for Linux amd64
-VERSION="0.1.0"
-OS="linux"
-ARCH="amd64"
+VERSION="0.0.1"
 
-unzip terraform-provider-docidr_${VERSION}_${OS}_${ARCH}.zip
-mkdir -p ~/.terraform.d/plugins/github.com/DO-Solutions/docidr/${VERSION}/${OS}_${ARCH}
-mv terraform-provider-docidr_v${VERSION} ~/.terraform.d/plugins/github.com/DO-Solutions/docidr/${VERSION}/${OS}_${ARCH}/
+unzip terraform-provider-docidr_${VERSION}_linux_amd64.zip
+mkdir -p ~/.terraform.d/plugins/DO-Solutions/docidr
+mv terraform-provider-docidr_v${VERSION} ~/.terraform.d/plugins/DO-Solutions/docidr/
 ```
 
-3. Add the provider to your Terraform configuration:
+3. Add the following to `~/.terraformrc`:
+
+```hcl
+provider_installation {
+  dev_overrides {
+    "DO-Solutions/docidr" = "~/.terraform.d/plugins/DO-Solutions/docidr"
+  }
+  direct {}
+}
+```
+
+4. Add the provider to your Terraform configuration:
 
 ```terraform
 terraform {
   required_providers {
     docidr = {
-      source  = "github.com/DO-Solutions/docidr"
-      version = "~> 0.1"
+      source = "DO-Solutions/docidr"
     }
     digitalocean = {
       source = "digitalocean/digitalocean"
@@ -49,6 +62,8 @@ terraform {
   }
 }
 ```
+
+> **Note:** With `dev_overrides`, Terraform will show a warning that provider is overridden. This is expected behavior.
 
 ## Quick Start
 

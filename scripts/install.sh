@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO="DO-Solutions/terraform-provider-docidr"
 PROVIDER_NAME="docidr"
-PROVIDER_NAMESPACE="github.com/DO-Solutions"
+PROVIDER_SOURCE="DO-Solutions/docidr"
 
 # Detect OS
 detect_os() {
@@ -54,6 +54,47 @@ get_latest_version() {
     echo "${version#v}"
 }
 
+# Configure terraformrc with dev_overrides
+configure_terraformrc() {
+    local install_dir="$1"
+    local terraformrc="${HOME}/.terraformrc"
+    local dev_override_entry="\"${PROVIDER_SOURCE}\" = \"${install_dir}\""
+
+    # Check if terraformrc exists and already has our override
+    if [[ -f "$terraformrc" ]]; then
+        if grep -q "${PROVIDER_SOURCE}" "$terraformrc"; then
+            echo "  ~/.terraformrc already configured for ${PROVIDER_SOURCE}"
+            return 0
+        fi
+
+        # Check if dev_overrides block exists
+        if grep -q "dev_overrides" "$terraformrc"; then
+            echo "  Warning: ~/.terraformrc has dev_overrides but not for ${PROVIDER_SOURCE}"
+            echo "  Please add manually: ${dev_override_entry}"
+            return 0
+        fi
+    fi
+
+    # Create or append to terraformrc
+    echo "  Configuring ~/.terraformrc..."
+
+    if [[ -f "$terraformrc" ]]; then
+        # Backup existing file
+        cp "$terraformrc" "${terraformrc}.backup"
+        echo "  Backed up existing ~/.terraformrc to ~/.terraformrc.backup"
+    fi
+
+    cat > "$terraformrc" << EOF
+provider_installation {
+  dev_overrides {
+    "${PROVIDER_SOURCE}" = "${install_dir}"
+  }
+  direct {}
+}
+EOF
+    echo "  Created ~/.terraformrc with dev_overrides"
+}
+
 main() {
     local os arch version install_dir download_url zip_file binary_name
 
@@ -67,7 +108,7 @@ main() {
     echo "  Arch: $arch"
     echo "  Version: $version"
 
-    install_dir="${HOME}/.terraform.d/plugins/${PROVIDER_NAMESPACE}/${PROVIDER_NAME}/${version}/${os}_${arch}"
+    install_dir="${HOME}/.terraform.d/plugins/DO-Solutions/docidr"
     download_url="https://github.com/${REPO}/releases/download/v${version}/terraform-provider-${PROVIDER_NAME}_${version}_${os}_${arch}.zip"
     zip_file=$(mktemp)
     binary_name="terraform-provider-${PROVIDER_NAME}_v${version}"
@@ -102,6 +143,9 @@ main() {
         chmod +x "${install_dir}/${binary_name}"
     fi
 
+    # Configure terraformrc
+    configure_terraformrc "$install_dir"
+
     echo ""
     echo "Successfully installed terraform-provider-docidr v${version}"
     echo ""
@@ -110,11 +154,13 @@ main() {
     echo '  terraform {'
     echo '    required_providers {'
     echo '      docidr = {'
-    echo "        source  = \"${PROVIDER_NAMESPACE}/${PROVIDER_NAME}\""
-    echo "        version = \"${version}\""
+    echo "        source = \"${PROVIDER_SOURCE}\""
     echo '      }'
     echo '    }'
     echo '  }'
+    echo ""
+    echo "Note: You will see a warning about dev_overrides when running terraform."
+    echo "This is expected behavior for providers installed from GitHub releases."
     echo ""
 }
 

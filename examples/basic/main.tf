@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     docidr = {
-      source = "github.com/DO-Solutions/docidr"
+      source = "DO-Solutions/docidr"
     }
     digitalocean = {
       source = "digitalocean/digitalocean"
