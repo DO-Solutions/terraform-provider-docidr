@@ -20,31 +20,36 @@ curl -sSL https://raw.githubusercontent.com/DO-Solutions/terraform-provider-doci
 
 The script will:
 1. Download the appropriate binary for your platform
-2. Install it to `~/.terraform.d/plugins/DO-Solutions/docidr/`
-3. Configure `~/.terraformrc` with the necessary `dev_overrides`
+2. Install it to the correct Terraform plugin directory
+3. Configure `~/.terraformrc` with a filesystem mirror
 
 ### Option 2: Manual Installation
 
 1. Download the appropriate release from [GitHub Releases](https://github.com/DO-Solutions/terraform-provider-docidr/releases)
-2. Extract and install:
+2. Extract and install to the plugin directory:
 
 ```bash
 # Example for Linux amd64
 VERSION="0.0.1"
+OS="linux"
+ARCH="amd64"
 
-unzip terraform-provider-docidr_${VERSION}_linux_amd64.zip
-mkdir -p ~/.terraform.d/plugins/DO-Solutions/docidr
-mv terraform-provider-docidr_v${VERSION} ~/.terraform.d/plugins/DO-Solutions/docidr/
+unzip terraform-provider-docidr_${VERSION}_${OS}_${ARCH}.zip
+mkdir -p ~/.terraform.d/plugins/registry.terraform.io/DO-Solutions/docidr/${VERSION}/${OS}_${ARCH}
+mv terraform-provider-docidr_v${VERSION} ~/.terraform.d/plugins/registry.terraform.io/DO-Solutions/docidr/${VERSION}/${OS}_${ARCH}/
 ```
 
 3. Add the following to `~/.terraformrc`:
 
 ```hcl
 provider_installation {
-  dev_overrides {
-    "DO-Solutions/docidr" = "~/.terraform.d/plugins/DO-Solutions/docidr"
+  filesystem_mirror {
+    path    = "~/.terraform.d/plugins"
+    include = ["DO-Solutions/docidr"]
   }
-  direct {}
+  direct {
+    exclude = ["DO-Solutions/docidr"]
+  }
 }
 ```
 
@@ -62,8 +67,6 @@ terraform {
   }
 }
 ```
-
-> **Note:** With `dev_overrides`, Terraform will show a warning that provider is overridden. This is expected behavior.
 
 ## Quick Start
 

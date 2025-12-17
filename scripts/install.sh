@@ -54,49 +54,42 @@ get_latest_version() {
     echo "${version#v}"
 }
 
-# Configure terraformrc with dev_overrides
+# Configure terraformrc with filesystem_mirror
 configure_terraformrc() {
-    local install_dir="$1"
+    local plugins_dir="$1"
     local terraformrc="${HOME}/.terraformrc"
-    local dev_override_entry="\"${PROVIDER_SOURCE}\" = \"${install_dir}\""
 
-    # Check if terraformrc exists and already has our override
+    # Check if terraformrc exists and already has our configuration
     if [[ -f "$terraformrc" ]]; then
         if grep -q "${PROVIDER_SOURCE}" "$terraformrc"; then
             echo "  ~/.terraformrc already configured for ${PROVIDER_SOURCE}"
             return 0
         fi
 
-        # Check if dev_overrides block exists
-        if grep -q "dev_overrides" "$terraformrc"; then
-            echo "  Warning: ~/.terraformrc has dev_overrides but not for ${PROVIDER_SOURCE}"
-            echo "  Please add manually: ${dev_override_entry}"
-            return 0
-        fi
-    fi
-
-    # Create or append to terraformrc
-    echo "  Configuring ~/.terraformrc..."
-
-    if [[ -f "$terraformrc" ]]; then
         # Backup existing file
         cp "$terraformrc" "${terraformrc}.backup"
         echo "  Backed up existing ~/.terraformrc to ~/.terraformrc.backup"
     fi
 
+    # Create terraformrc with filesystem_mirror
+    echo "  Configuring ~/.terraformrc..."
+
     cat > "$terraformrc" << EOF
 provider_installation {
-  dev_overrides {
-    "${PROVIDER_SOURCE}" = "${install_dir}"
+  filesystem_mirror {
+    path    = "${plugins_dir}"
+    include = ["${PROVIDER_SOURCE}"]
   }
-  direct {}
+  direct {
+    exclude = ["${PROVIDER_SOURCE}"]
+  }
 }
 EOF
-    echo "  Created ~/.terraformrc with dev_overrides"
+    echo "  Created ~/.terraformrc with filesystem_mirror configuration"
 }
 
 main() {
-    local os arch version install_dir download_url zip_file binary_name
+    local os arch version plugins_dir install_dir download_url zip_file binary_name
 
     echo "Installing terraform-provider-docidr..."
 
@@ -108,7 +101,8 @@ main() {
     echo "  Arch: $arch"
     echo "  Version: $version"
 
-    install_dir="${HOME}/.terraform.d/plugins/DO-Solutions/docidr"
+    plugins_dir="${HOME}/.terraform.d/plugins"
+    install_dir="${plugins_dir}/registry.terraform.io/DO-Solutions/docidr/${version}/${os}_${arch}"
     download_url="https://github.com/${REPO}/releases/download/v${version}/terraform-provider-${PROVIDER_NAME}_${version}_${os}_${arch}.zip"
     zip_file=$(mktemp)
     binary_name="terraform-provider-${PROVIDER_NAME}_v${version}"
@@ -144,7 +138,7 @@ main() {
     fi
 
     # Configure terraformrc
-    configure_terraformrc "$install_dir"
+    configure_terraformrc "$plugins_dir"
 
     echo ""
     echo "Successfully installed terraform-provider-docidr v${version}"
@@ -158,9 +152,6 @@ main() {
     echo '      }'
     echo '    }'
     echo '  }'
-    echo ""
-    echo "Note: You will see a warning about dev_overrides when running terraform."
-    echo "This is expected behavior for providers installed from GitHub releases."
     echo ""
 }
 
