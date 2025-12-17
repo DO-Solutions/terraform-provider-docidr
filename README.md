@@ -12,13 +12,36 @@ The `docidr` provider queries existing network allocations within your DigitalOc
 
 ## Installation
 
-Add the provider to your Terraform configuration:
+### Option 1: Install Script (Recommended)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/DO-Solutions/terraform-provider-docidr/main/scripts/install.sh | bash
+```
+
+### Option 2: Manual Installation
+
+1. Download the appropriate release from [GitHub Releases](https://github.com/DO-Solutions/terraform-provider-docidr/releases)
+2. Extract and install:
+
+```bash
+# Example for Linux amd64
+VERSION="0.1.0"
+OS="linux"
+ARCH="amd64"
+
+unzip terraform-provider-docidr_${VERSION}_${OS}_${ARCH}.zip
+mkdir -p ~/.terraform.d/plugins/github.com/DO-Solutions/docidr/${VERSION}/${OS}_${ARCH}
+mv terraform-provider-docidr_v${VERSION} ~/.terraform.d/plugins/github.com/DO-Solutions/docidr/${VERSION}/${OS}_${ARCH}/
+```
+
+3. Add the provider to your Terraform configuration:
 
 ```terraform
 terraform {
   required_providers {
     docidr = {
-      source = "DO-Solutions/docidr"
+      source  = "github.com/DO-Solutions/docidr"
+      version = "~> 0.1"
     }
     digitalocean = {
       source = "digitalocean/digitalocean"
@@ -128,3 +151,7 @@ make lint
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## License
+
+This `docidr` Terraform Provider is offered without support from DigitalOcean.
