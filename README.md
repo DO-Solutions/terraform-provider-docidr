@@ -170,6 +170,6 @@ make lint
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## License
+## Support
 
 This `docidr` Terraform Provider is offered without support from DigitalOcean.
